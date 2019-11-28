@@ -56,6 +56,30 @@ def shufflin():
         return False
 
 
+def get_music_status():
+    tags = os.popen('cmus-remote -Q | grep "^tag "').readlines()
+    if not tags:
+        return None
+    metadata = {}
+    for tag in tags:
+        (tag_name, value) = tag.split(" ", maxsplit=2)[1:]
+        metadata[tag_name] = value
+
+    status = metadata[title] if "title" in metadata else "Song"
+
+    if "artist" in metadata:
+        status = status + " by " + meatdata["artist"]
+    elif "albumartist" in metadata:
+        status = status + " by " + meatdata["albumartist"]
+    elif "composer" in metadata:
+        status = status + " by " + meatdata["composer"]
+
+    if "album" in metadata:
+        status = status + " from " + meatdata["album"]
+
+    return status
+
+
 def changeshuffling():
     if shufflin():
         os.system('cmus-remote -C "set shuffle=false"')
@@ -123,6 +147,13 @@ class Localmusicplayer(CommonPlaySkill):
     def handle_show_music_intent(self, message):
         self.activate_player()
         show_player()
+
+    @intent_file_handler('status.music.intent')
+    def handle_status_music_intent(self, message):
+        status = get_music_status() if getrunning() else None
+        if not status:
+            status = "No song is playing"
+        self.speak(status)
 
     @intent_file_handler('change.shuffling.music.intent')
     def handle_change_shuffle_music_intent(self, message):
